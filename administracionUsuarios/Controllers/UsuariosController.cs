@@ -18,7 +18,6 @@ namespace administracionUsuarios.Controllers
             _context = context;
         }
 
-        // GET: api/Usuarios
         [HttpGet]
         public ActionResult<IEnumerable<UserDetailsDto>> GetUserDetails()
         {
@@ -54,10 +53,8 @@ namespace administracionUsuarios.Controllers
 
             return Ok(userDetails);
         }
-    
 
-    // GET: api/Usuarios/5
-    [HttpGet("{id}")]
+        [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUsuario(int id)
         {
             var usuario = await _context.Users.FindAsync(id);
@@ -70,7 +67,6 @@ namespace administracionUsuarios.Controllers
             return usuario;
         }
 
-        // POST: api/Usuarios
         [HttpPost]
         public async Task<ActionResult<User>> PostUsuario(User usuario)
         {
@@ -80,50 +76,123 @@ namespace administracionUsuarios.Controllers
             return CreatedAtAction("GetUsuario", new { id = usuario.Id }, usuario);
         }
 
-        // PUT: api/Usuarios/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutUsuario(int id, User usuario)
+        [HttpPut]
+        public async Task<ActionResult> Put(User usuarios)
         {
-            if (id != usuario.Id)
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Usuario == usuarios.Usuario);
+
+            if (existingUser == null)
             {
-                return BadRequest();
+                return NotFound("Usuario no encontrado.");
             }
 
-            _context.Entry(usuario).State = EntityState.Modified;
+            existingUser.Usuario = usuarios.Usuario;
+            existingUser.PrimerNombre = usuarios.PrimerNombre;
+            existingUser.SegundoNombre = usuarios.SegundoNombre;
+            existingUser.PrimerApellido = usuarios.PrimerApellido;
+            existingUser.SegundoApellido = usuarios.SegundoApellido;
+            existingUser.IdDepartamento = usuarios.IdDepartamento;
+            existingUser.IdCargo = usuarios.IdCargo;
 
             try
             {
                 await _context.SaveChangesAsync();
+                return Ok();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateException ex)
             {
-                if (!UsuarioExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return StatusCode(500, new { Error = "Error al actualizar usuario: " + ex.Message });
             }
-
-            return NoContent();
         }
 
-        // DELETE: api/Usuarios/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUsuario(int id)
+        [HttpDelete("{usuario}")]
+        public async Task<IActionResult> Delete(string usuario)
         {
-            var usuario = await _context.Users.FindAsync(id);
-            if (usuario == null)
+            var userToDelete = await _context.Users.FirstOrDefaultAsync(u => u.Usuario == usuario);
+
+            if (userToDelete == null)
             {
                 return NotFound();
             }
 
-            _context.Users.Remove(usuario);
+            _context.Users.Remove(userToDelete);
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        [HttpGet("ByDepartamento/{codigoDepartamento}")]
+        public ActionResult<IEnumerable<UserDetailsDto>> GetUsuariosByDepartamento(string codigoDepartamento)
+        {
+            var usuariosByDepartamento = _context.Users
+                .Include(u => u.IdDepartamentoNavigation)
+                .Include(u => u.IdCargoNavigation)
+                .Where(u => u.IdDepartamentoNavigation.Codigo == codigoDepartamento)
+                .Select(u => new UserDetailsDto
+                {
+                    Id = u.Id,
+                    Usuario = u.Usuario,
+                    PrimerNombre = u.PrimerNombre,
+                    SegundoNombre = u.SegundoNombre,
+                    PrimerApellido = u.PrimerApellido,
+                    SegundoApellido = u.SegundoApellido,
+                    Departamento = new DepartamentoDto
+                    {
+                        Id = u.IdDepartamentoNavigation.Id,
+                        Codigo = u.IdDepartamentoNavigation.Codigo,
+                        Nombre = u.IdDepartamentoNavigation.Nombre,
+                        Activo = u.IdDepartamentoNavigation.Activo,
+                        IdUsuarioCreacion = u.IdDepartamentoNavigation.IdUsuarioCreacion
+                    },
+                    Cargo = new CargoDto
+                    {
+                        Id = u.IdCargoNavigation.Id,
+                        Codigo = u.IdCargoNavigation.Codigo,
+                        Nombre = u.IdCargoNavigation.Nombre,
+                        Activo = u.IdCargoNavigation.Activo,
+                        IdUsuarioCreacion = u.IdCargoNavigation.IdUsuarioCreacion
+                    }
+                })
+                .ToList();
+
+            return Ok(usuariosByDepartamento);
+        }
+
+        [HttpGet("ByCargo/{codigoCargo}")]
+        public ActionResult<IEnumerable<UserDetailsDto>> GetUsuariosByCargo(string codigoCargo)
+        {
+            var usuariosByCargo = _context.Users
+                .Include(u => u.IdDepartamentoNavigation)
+                .Include(u => u.IdCargoNavigation)
+                .Where(u => u.IdCargoNavigation.Codigo == codigoCargo)
+                .Select(u => new UserDetailsDto
+                {
+                    Id = u.Id,
+                    Usuario = u.Usuario,
+                    PrimerNombre = u.PrimerNombre,
+                    SegundoNombre = u.SegundoNombre,
+                    PrimerApellido = u.PrimerApellido,
+                    SegundoApellido = u.SegundoApellido,
+                    Departamento = new DepartamentoDto
+                    {
+                        Id = u.IdDepartamentoNavigation.Id,
+                        Codigo = u.IdDepartamentoNavigation.Codigo,
+                        Nombre = u.IdDepartamentoNavigation.Nombre,
+                        Activo = u.IdDepartamentoNavigation.Activo,
+                        IdUsuarioCreacion = u.IdDepartamentoNavigation.IdUsuarioCreacion
+                    },
+                    Cargo = new CargoDto
+                    {
+                        Id = u.IdCargoNavigation.Id,
+                        Codigo = u.IdCargoNavigation.Codigo,
+                        Nombre = u.IdCargoNavigation.Nombre,
+                        Activo = u.IdCargoNavigation.Activo,
+                        IdUsuarioCreacion = u.IdCargoNavigation.IdUsuarioCreacion
+                    }
+                })
+                .ToList();
+
+            return Ok(usuariosByCargo);
         }
 
         private bool UsuarioExists(int id)

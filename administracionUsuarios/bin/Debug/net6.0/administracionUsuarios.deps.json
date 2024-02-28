@@ -8,6 +8,8 @@
     ".NETCoreApp,Version=v6.0": {
       "administracionUsuarios/1.0.0": {
         "dependencies": {
+          "Microsoft.EntityFrameworkCore": "6.0.27",
+          "Microsoft.EntityFrameworkCore.Analyzers": "6.0.27",
           "Microsoft.EntityFrameworkCore.SqlServer": "6.0.27",
           "Microsoft.EntityFrameworkCore.Tools": "6.0.27",
           "Swashbuckle.AspNetCore": "6.2.3"

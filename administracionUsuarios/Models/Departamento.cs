@@ -16,6 +16,6 @@ namespace administracionUsuarios.Models
         public bool? Activo { get; set; }
         public int? IdUsuarioCreacion { get; set; }
 
-        public virtual ICollection<User> Users { get; set; }
+        public virtual ICollection<User>? Users { get; set; }
     }
 }
